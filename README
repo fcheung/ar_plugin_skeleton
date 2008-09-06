@@ -1,2 +1,80 @@
-An empty skeleton for a rails plugin that has unit tests to run against
-the database
+ActiveRecord Skeleton Plugin
+============================
+
+This is empty skeleton for a rails plugin that has unit tests to run against the database. 
+I got tired of recreating the same thing everytime I setup a new plugin and so here we are. This is at least partially inspired by some of Rick Olson's plugins.
+
+With this particular setup the plugin can be tested without it having to be placed inside a Rails application. A consequence of this is that activerecord and activesupport are loaded from rubygems and so by default use the most recent version installed on your machine. One could use the rubygems version control features to require specific version (or even to write a rake task that would run the tests against multiple versions of rails).
+
+The Layout
+==========
+
+init.rb - Your plugin's initializer
+lib/ - Here be your code
+README - You are here
+Rakefile - default plugin Rakefile
+test/
+  database.yml - usual config file which tells the plugin what database to use
+  debug.log - Logger output from running the tests will appear here
+  fixtures/
+    This contains 2 things: .yml files that are fixtures in the usual sense of the term
+                            .rb files which are the corresponding models
+  schema.rb - A schema file that describes the database your tests run agains
+  test_helper.rb - the meat of this. loads up everything you need (including running your init.rb)
+  test.sqlite3 - If you follow the default setup running the tests will create a sqlite3 database here
+  unit/ Where your tests go. they should require test_helper
+  
+An Example
+==========
+
+We'll create a dummy plugin which adds a new method to ActiveRecord instances. The method will be called woof and it should return
+the object's id
+
+We only need one model for testing, called Animal
+
+in test/fixtures/animal.rb put
+
+class Animal < ActiveRecord::Base
+end
+
+in test/fixtures/animals.yml put
+
+lassie:
+  name: lassie
+sonic:
+  name: sonic
+  
+Next edit test/schema.rb. This schema will be loaded into the database the plugin's tests run against
+
+inside the schema definition block put
+
+create_table :animals, :force => true do |t|
+  t.column :name, :string
+end
+
+If this looks like a migration that's because it basically is. Anything you could do there, you can do here.
+
+Lastly we'll create the test itself, inside test/unit/woof_test.rb
+
+require File.dirname(__FILE__) + '/../test_helper'
+
+class WoofTest < Test::Unit::TestCase
+  def test_woof
+    assert_equal animals(:lassie).woof, animals(:lassie).id
+  end
+end
+
+And we're done (at least as far as the tests go). For the implementation we've got two more files to edit:
+
+Inside lib/woof.rb:
+
+module Woof
+  def woof
+    id
+  end
+end
+
+Inside init.rb:
+ActiveRecord::Base.send(:include, Woof)
+
+And now you should be able to run rake at the root of the plugin and see your test pass.
