@@ -4,15 +4,25 @@ require 'activesupport'
 require 'active_record'
 require 'active_record/fixtures'
 
+# If you also want to test controllers etc. then require actionpack/actioncontroller here
+# you will normally need to create at least one route or calls to url_for, redirect_to etc. will bomb
+
 RAILS_ENV = 'test'
 
-#Setup Rails' magic autoloading
-#Post 2.1 Dependencies should be replaced with ActiveSupport::Dependencies
-Dependencies.load_paths << File.expand_path(File.dirname(__FILE__) + "/../lib/")
+ActiveSupport::Dependencies.load_paths << File.expand_path(File.dirname(__FILE__) + "/../lib/")
 $LOAD_PATH.unshift(File.expand_path(File.dirname(__FILE__) + "/../lib/"))
 
-Test::Unit::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures/"
-$LOAD_PATH.unshift(Test::Unit::TestCase.fixture_path)
+class ActiveSupport::TestCase
+  include ActiveRecord::TestFixtures
+  self.fixture_path = File.dirname(__FILE__) + "/fixtures/"
+  self.use_instantiated_fixtures  = false
+  self.use_transactional_fixtures = true
+end
+
+def create_fixtures(*table_names, &block)
+  Fixtures.create_fixtures(ActiveSupport::TestCase.fixture_path, table_names, {}, &block)
+end
+$LOAD_PATH.unshift(ActiveSupport::TestCase.fixture_path)
 
 
 #Setup activerecord
@@ -30,9 +40,3 @@ load(File.dirname(__FILE__) + "/schema.rb")
 #initialize the plugin
 require File.dirname(__FILE__) + '/../init'
 
-class Test::Unit::TestCase
-  fixtures :all
-
-  self.use_transactional_fixtures = true
-  self.use_instantiated_fixtures  = false
-end
