@@ -38,5 +38,7 @@ ActiveRecord::Base.establish_connection(ActiveRecord::Base.configurations['test'
 load(File.dirname(__FILE__) + "/schema.rb")
 
 #initialize the plugin
-require File.dirname(__FILE__) + '/../init'
-
+begin
+  require File.dirname(__FILE__) + '/../init'
+rescue MissingSourceFile # not all plugins have an init.rb
+end
